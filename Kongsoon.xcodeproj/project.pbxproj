@@ -6,6 +6,27 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		769350F22F9BE05D0093DCAD /* EmotionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350E42F9BE05D0093DCAD /* EmotionState.swift */; };
+		769350F32F9BE05D0093DCAD /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350D92F9BE05D0093DCAD /* CameraManager.swift */; };
+		769350F42F9BE05D0093DCAD /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350EB2F9BE05D0093DCAD /* HomeView.swift */; };
+		769350F52F9BE05D0093DCAD /* Movie.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350E82F9BE05D0093DCAD /* Movie.swift */; };
+		769350F62F9BE05D0093DCAD /* PrimaryActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350DD2F9BE05D0093DCAD /* PrimaryActionButton.swift */; };
+		769350F72F9BE05D0093DCAD /* CameraPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350DA2F9BE05D0093DCAD /* CameraPreview.swift */; };
+		769350F82F9BE05D0093DCAD /* AnalysisReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350EA2F9BE05D0093DCAD /* AnalysisReportView.swift */; };
+		769350F92F9BE05D0093DCAD /* kongsoonApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350F02F9BE05D0093DCAD /* kongsoonApp.swift */; };
+		769350FA2F9BE05D0093DCAD /* BehaviorType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350E32F9BE05D0093DCAD /* BehaviorType.swift */; };
+		769350FB2F9BE05D0093DCAD /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350EF2F9BE05D0093DCAD /* ContentView.swift */; };
+		769350FC2F9BE05D0093DCAD /* RealtimeAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350EC2F9BE05D0093DCAD /* RealtimeAnalysisView.swift */; };
+		769350FD2F9BE05D0093DCAD /* ScoreBarList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350DE2F9BE05D0093DCAD /* ScoreBarList.swift */; };
+		769350FE2F9BE05D0093DCAD /* AnalysisModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350E22F9BE05D0093DCAD /* AnalysisModels.swift */; };
+		769350FF2F9BE05D0093DCAD /* EmotionHeaderCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350DC2F9BE05D0093DCAD /* EmotionHeaderCard.swift */; };
+		769351002F9BE05D0093DCAD /* MockDogEmotionAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350E62F9BE05D0093DCAD /* MockDogEmotionAnalyzer.swift */; };
+		769351012F9BE05D0093DCAD /* SignalListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350DF2F9BE05D0093DCAD /* SignalListView.swift */; };
+		769351022F9BE05D0093DCAD /* VideoAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350ED2F9BE05D0093DCAD /* VideoAnalysisView.swift */; };
+		769351032F9BE05D0093DCAD /* TimelineListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350E02F9BE05D0093DCAD /* TimelineListView.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		769350B12F9BDDA10093DCAD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +48,24 @@
 		769350A32F9BDD9F0093DCAD /* Kongsoon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Kongsoon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		769350B02F9BDDA10093DCAD /* KongsoonTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KongsoonTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		769350BA2F9BDDA10093DCAD /* KongsoonUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KongsoonUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		769350D92F9BE05D0093DCAD /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		769350DA2F9BE05D0093DCAD /* CameraPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPreview.swift; sourceTree = "<group>"; };
+		769350DC2F9BE05D0093DCAD /* EmotionHeaderCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmotionHeaderCard.swift; sourceTree = "<group>"; };
+		769350DD2F9BE05D0093DCAD /* PrimaryActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrimaryActionButton.swift; sourceTree = "<group>"; };
+		769350DE2F9BE05D0093DCAD /* ScoreBarList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreBarList.swift; sourceTree = "<group>"; };
+		769350DF2F9BE05D0093DCAD /* SignalListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignalListView.swift; sourceTree = "<group>"; };
+		769350E02F9BE05D0093DCAD /* TimelineListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineListView.swift; sourceTree = "<group>"; };
+		769350E22F9BE05D0093DCAD /* AnalysisModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisModels.swift; sourceTree = "<group>"; };
+		769350E32F9BE05D0093DCAD /* BehaviorType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BehaviorType.swift; sourceTree = "<group>"; };
+		769350E42F9BE05D0093DCAD /* EmotionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmotionState.swift; sourceTree = "<group>"; };
+		769350E62F9BE05D0093DCAD /* MockDogEmotionAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDogEmotionAnalyzer.swift; sourceTree = "<group>"; };
+		769350E82F9BE05D0093DCAD /* Movie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Movie.swift; sourceTree = "<group>"; };
+		769350EA2F9BE05D0093DCAD /* AnalysisReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisReportView.swift; sourceTree = "<group>"; };
+		769350EB2F9BE05D0093DCAD /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		769350EC2F9BE05D0093DCAD /* RealtimeAnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealtimeAnalysisView.swift; sourceTree = "<group>"; };
+		769350ED2F9BE05D0093DCAD /* VideoAnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoAnalysisView.swift; sourceTree = "<group>"; };
+		769350EF2F9BE05D0093DCAD /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		769350F02F9BE05D0093DCAD /* kongsoonApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = kongsoonApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +114,7 @@
 		7693509A2F9BDD9F0093DCAD = {
 			isa = PBXGroup;
 			children = (
+				769350F12F9BE05D0093DCAD /* Source */,
 				769350A52F9BDD9F0093DCAD /* Kongsoon */,
 				769350B32F9BDDA10093DCAD /* KongsoonTests */,
 				769350BD2F9BDDA10093DCAD /* KongsoonUITests */,
@@ -90,6 +130,79 @@
 				769350BA2F9BDDA10093DCAD /* KongsoonUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		769350DB2F9BE05D0093DCAD /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				769350D92F9BE05D0093DCAD /* CameraManager.swift */,
+				769350DA2F9BE05D0093DCAD /* CameraPreview.swift */,
+			);
+			path = Camera;
+			sourceTree = "<group>";
+		};
+		769350E12F9BE05D0093DCAD /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				769350DC2F9BE05D0093DCAD /* EmotionHeaderCard.swift */,
+				769350DD2F9BE05D0093DCAD /* PrimaryActionButton.swift */,
+				769350DE2F9BE05D0093DCAD /* ScoreBarList.swift */,
+				769350DF2F9BE05D0093DCAD /* SignalListView.swift */,
+				769350E02F9BE05D0093DCAD /* TimelineListView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		769350E52F9BE05D0093DCAD /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				769350E22F9BE05D0093DCAD /* AnalysisModels.swift */,
+				769350E32F9BE05D0093DCAD /* BehaviorType.swift */,
+				769350E42F9BE05D0093DCAD /* EmotionState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		769350E72F9BE05D0093DCAD /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				769350E62F9BE05D0093DCAD /* MockDogEmotionAnalyzer.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		769350E92F9BE05D0093DCAD /* Transferables */ = {
+			isa = PBXGroup;
+			children = (
+				769350E82F9BE05D0093DCAD /* Movie.swift */,
+			);
+			path = Transferables;
+			sourceTree = "<group>";
+		};
+		769350EE2F9BE05D0093DCAD /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				769350EA2F9BE05D0093DCAD /* AnalysisReportView.swift */,
+				769350EB2F9BE05D0093DCAD /* HomeView.swift */,
+				769350EC2F9BE05D0093DCAD /* RealtimeAnalysisView.swift */,
+				769350ED2F9BE05D0093DCAD /* VideoAnalysisView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		769350F12F9BE05D0093DCAD /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				769350DB2F9BE05D0093DCAD /* Camera */,
+				769350E12F9BE05D0093DCAD /* Components */,
+				769350E52F9BE05D0093DCAD /* Models */,
+				769350E72F9BE05D0093DCAD /* Services */,
+				769350E92F9BE05D0093DCAD /* Transferables */,
+				769350EE2F9BE05D0093DCAD /* Views */,
+				769350EF2F9BE05D0093DCAD /* ContentView.swift */,
+				769350F02F9BE05D0093DCAD /* kongsoonApp.swift */,
+			);
+			path = Source;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -236,6 +349,24 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				769350F22F9BE05D0093DCAD /* EmotionState.swift in Sources */,
+				769350F32F9BE05D0093DCAD /* CameraManager.swift in Sources */,
+				769350F42F9BE05D0093DCAD /* HomeView.swift in Sources */,
+				769350F52F9BE05D0093DCAD /* Movie.swift in Sources */,
+				769350F62F9BE05D0093DCAD /* PrimaryActionButton.swift in Sources */,
+				769350F72F9BE05D0093DCAD /* CameraPreview.swift in Sources */,
+				769350F82F9BE05D0093DCAD /* AnalysisReportView.swift in Sources */,
+				769350F92F9BE05D0093DCAD /* kongsoonApp.swift in Sources */,
+				769350FA2F9BE05D0093DCAD /* BehaviorType.swift in Sources */,
+				769350FB2F9BE05D0093DCAD /* ContentView.swift in Sources */,
+				769350FC2F9BE05D0093DCAD /* RealtimeAnalysisView.swift in Sources */,
+				769350FD2F9BE05D0093DCAD /* ScoreBarList.swift in Sources */,
+				769350FE2F9BE05D0093DCAD /* AnalysisModels.swift in Sources */,
+				769350FF2F9BE05D0093DCAD /* EmotionHeaderCard.swift in Sources */,
+				769351002F9BE05D0093DCAD /* MockDogEmotionAnalyzer.swift in Sources */,
+				769351012F9BE05D0093DCAD /* SignalListView.swift in Sources */,
+				769351022F9BE05D0093DCAD /* VideoAnalysisView.swift in Sources */,
+				769351032F9BE05D0093DCAD /* TimelineListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -398,6 +529,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "강아지 행동 분석 및 감정 상태 분석하기 위해 카메라 접근이 필요합니다. ";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "강아지 음성 분석하기 위해 마이크 접근이 필요합니다. ";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "기존 영상 및 이미지 업로드를 위해 사진 보관함 접근이 필요합니다. ";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -442,6 +576,9 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "강아지 행동 분석 및 감정 상태 분석하기 위해 카메라 접근이 필요합니다. ";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "강아지 음성 분석하기 위해 마이크 접근이 필요합니다. ";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "기존 영상 및 이미지 업로드를 위해 사진 보관함 접근이 필요합니다. ";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
