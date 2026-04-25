@@ -13,7 +13,7 @@ SwiftUI 기반 강아지 감정/행동 분석 앱 UI MVP입니다.
 - 시간대별 타임라인 UI
 - 카메라 프리뷰 연결
 - PhotosPicker 영상 선택 연결
-- Mock 분석 엔진
+- Vision 기반 실제 분석 엔진(업로드/녹화 영상)
 
 ## Xcode 적용 방법
 
@@ -34,4 +34,5 @@ SwiftUI 기반 강아지 감정/행동 분석 앱 UI MVP입니다.
 
 ## 현재 상태
 
-AI 추론은 아직 Mock 결과입니다. 나중에 `MockDogEmotionAnalyzer`를 실제 Core ML 기반 `DogEmotionAnalyzer`로 교체하면 됩니다.
+`VisionDogEmotionAnalyzer`가 영상 프레임에서 반려견 객체를 인식하고 움직임/변동성 지표를 계산해 실제 리포트를 생성합니다.
+실시간 스트리밍 중 화면 표시는 Mock 상태를 사용하지만, 녹화 종료 후에는 실제 영상 분석 결과로 리포트를 생성합니다.
