@@ -25,6 +25,7 @@
 		769351012F9BE05D0093DCAD /* SignalListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350DF2F9BE05D0093DCAD /* SignalListView.swift */; };
 		769351022F9BE05D0093DCAD /* VideoAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350ED2F9BE05D0093DCAD /* VideoAnalysisView.swift */; };
 		769351032F9BE05D0093DCAD /* TimelineListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769350E02F9BE05D0093DCAD /* TimelineListView.swift */; };
+		76A110012F9CF0000093DCAD /* VisionDogEmotionAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76A110002F9CF0000093DCAD /* VisionDogEmotionAnalyzer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,7 @@
 		769350E32F9BE05D0093DCAD /* BehaviorType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BehaviorType.swift; sourceTree = "<group>"; };
 		769350E42F9BE05D0093DCAD /* EmotionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmotionState.swift; sourceTree = "<group>"; };
 		769350E62F9BE05D0093DCAD /* MockDogEmotionAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDogEmotionAnalyzer.swift; sourceTree = "<group>"; };
+		76A110002F9CF0000093DCAD /* VisionDogEmotionAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionDogEmotionAnalyzer.swift; sourceTree = "<group>"; };
 		769350E82F9BE05D0093DCAD /* Movie.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Movie.swift; sourceTree = "<group>"; };
 		769350EA2F9BE05D0093DCAD /* AnalysisReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisReportView.swift; sourceTree = "<group>"; };
 		769350EB2F9BE05D0093DCAD /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -167,6 +169,7 @@
 			isa = PBXGroup;
 			children = (
 				769350E62F9BE05D0093DCAD /* MockDogEmotionAnalyzer.swift */,
+				76A110002F9CF0000093DCAD /* VisionDogEmotionAnalyzer.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -367,6 +370,7 @@
 				769351012F9BE05D0093DCAD /* SignalListView.swift in Sources */,
 				769351022F9BE05D0093DCAD /* VideoAnalysisView.swift in Sources */,
 				769351032F9BE05D0093DCAD /* TimelineListView.swift in Sources */,
+				76A110012F9CF0000093DCAD /* VisionDogEmotionAnalyzer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
