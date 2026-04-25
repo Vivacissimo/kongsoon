@@ -17,7 +17,7 @@ enum EmotionState: String, CaseIterable, Identifiable {
         case .happyExcited:
             return "기쁨/흥분"
         case .anxiousStressed:
-            return "불안/짜증"
+            return "불안/스트레스"
         case .alert:
             return "경계/집중"
         case .fearful:
@@ -34,7 +34,7 @@ enum EmotionState: String, CaseIterable, Identifiable {
         case .happyExcited:
             return "활동량이 높고 긍정적인 흥분 신호가 보입니다."
         case .anxiousStressed:
-            return "반복 움직임이나 짜증/예민 반응 신호가 함께 감지됩니다."
+            return "반복 움직임이나 불안 신호가 함께 감지됩니다."
         case .alert:
             return "시선 또는 몸 방향이 특정 대상에 집중되어 있습니다."
         case .fearful:

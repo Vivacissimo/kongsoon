@@ -6,8 +6,6 @@ struct RealtimeAnalysisView: View {
     @StateObject private var cameraManager = CameraManager()
     @State private var analysis = MockDogEmotionAnalyzer.makeRealtimeResult()
     @State private var isAnalysisSessionActive = false
-    @State private var isAnalyzingRecordedVideo = false
-    @State private var recordedVideoAnalysisError: String?
     @State private var sessionStartDate: Date?
     @State private var elapsedSeconds = 0
     @State private var showRecordedReport = false
@@ -42,13 +40,6 @@ struct RealtimeAnalysisView: View {
             guard isAnalysisSessionActive else { return }
             updateElapsedTime()
             analysis = MockDogEmotionAnalyzer.makeRealtimeResult()
-        }
-        .onChange(of: cameraManager.lastRecordedVideoURL) { _, newURL in
-            guard let newURL else { return }
-
-            Task {
-                await analyzeRecordedVideo(url: newURL)
-            }
         }
         .navigationDestination(isPresented: $showRecordedReport) {
             AnalysisReportView(analysis: analysis)
@@ -166,20 +157,7 @@ struct RealtimeAnalysisView: View {
             SignalListView(signals: Array(analysis.signals.prefix(2)))
                 .opacity(isAnalysisSessionActive ? 1.0 : 0.6)
 
-            if isAnalyzingRecordedVideo {
-                HStack(spacing: 10) {
-                    ProgressView()
-                    Text("녹화 영상을 분석 중입니다…")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            } else if let recordedVideoAnalysisError {
-                Text(recordedVideoAnalysisError)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else if cameraManager.lastRecordedVideoURL != nil && !isAnalysisSessionActive {
+            if cameraManager.lastRecordedVideoURL != nil && !isAnalysisSessionActive {
                 Button {
                     showRecordedReport = true
                 } label: {
@@ -234,7 +212,7 @@ struct RealtimeAnalysisView: View {
         }
 
         if cameraManager.lastRecordedVideoURL != nil {
-            return isAnalyzingRecordedVideo ? "녹화가 끝나 분석을 수행하는 중입니다." : "저장된 영상으로 리포트를 확인할 수 있습니다."
+            return "저장된 영상으로 리포트를 확인할 수 있습니다."
         }
 
         return "특정 행동이 시작될 때 녹화를 시작하세요."
@@ -246,9 +224,7 @@ struct RealtimeAnalysisView: View {
         }
 
         if cameraManager.lastRecordedVideoURL != nil {
-            return isAnalyzingRecordedVideo
-                ? "Core ML 모델 기반 영상 분석을 수행하는 중입니다."
-                : "녹화가 끝났습니다. 분석 리포트를 확인하세요."
+            return "녹화가 끝났습니다. 현재 버전에서는 Mock 분석 결과를 리포트로 표시합니다."
         }
 
         return "실시간으로 계속 분석하기보다, 분석하고 싶은 행동 구간만 녹화해서 리포트로 보는 흐름입니다."
@@ -258,29 +234,14 @@ struct RealtimeAnalysisView: View {
         if isAnalysisSessionActive {
             isAnalysisSessionActive = false
             cameraManager.stopRecording()
+            analysis = MockDogEmotionAnalyzer.makeUploadedVideoResult()
         } else {
             elapsedSeconds = 0
             sessionStartDate = Date()
             cameraManager.startRecording()
             isAnalysisSessionActive = true
-            recordedVideoAnalysisError = nil
             analysis = MockDogEmotionAnalyzer.makeRealtimeResult()
         }
-    }
-
-    @MainActor
-    private func analyzeRecordedVideo(url: URL) async {
-        isAnalyzingRecordedVideo = true
-        recordedVideoAnalysisError = nil
-
-        do {
-            analysis = try await VisionDogEmotionAnalyzer.analyzeVideo(at: url)
-        } catch {
-            analysis = MockDogEmotionAnalyzer.makeUploadedVideoResult()
-            recordedVideoAnalysisError = "실제 분석에 실패해 Mock 리포트로 대체했습니다: \(error.localizedDescription)"
-        }
-
-        isAnalyzingRecordedVideo = false
     }
 
     private func updateElapsedTime() {

@@ -9,7 +9,6 @@ enum BehaviorType: String, CaseIterable, Identifiable {
     case pacing
     case barking
     case whining
-    case eating
     case unknown
 
     var id: String { rawValue }
@@ -32,8 +31,6 @@ enum BehaviorType: String, CaseIterable, Identifiable {
             return "짖음"
         case .whining:
             return "낑낑거림"
-        case .eating:
-            return "식사"
         case .unknown:
             return "판단 불가"
         }
@@ -57,8 +54,6 @@ enum BehaviorType: String, CaseIterable, Identifiable {
             return "speaker.wave.2.fill"
         case .whining:
             return "waveform"
-        case .eating:
-            return "fork.knife"
         case .unknown:
             return "questionmark.circle"
         }

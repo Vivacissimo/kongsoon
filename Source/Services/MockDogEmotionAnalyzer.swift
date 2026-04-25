@@ -34,7 +34,7 @@ struct MockDogEmotionAnalyzer {
                     AnalysisSignal(title: "정지 시간 짧음", detail: "한 위치에 머무르는 시간이 짧게 관찰됩니다.", weight: .medium),
                     AnalysisSignal(title: "주의 필요", detail: "장시간 지속되면 보호자 확인이 필요합니다.", weight: .high)
                 ],
-                "반복적인 움직임 때문에 불안/짜증 가능성이 높게 추정됩니다."
+                "반복적인 움직임 때문에 불안/스트레스 가능성이 높게 추정됩니다."
             ),
             (
                 .alert,
@@ -81,12 +81,11 @@ struct MockDogEmotionAnalyzer {
                 EmotionScore(state: .unknown, ratio: 0.03)
             ],
             behaviorScores: [
-                BehaviorScore(behavior: .lying, ratio: 0.16),
-                BehaviorScore(behavior: .sitting, ratio: 0.10),
-                BehaviorScore(behavior: .standing, ratio: 0.15),
-                BehaviorScore(behavior: .walking, ratio: 0.17),
-                BehaviorScore(behavior: .pacing, ratio: 0.25),
-                BehaviorScore(behavior: .eating, ratio: 0.10),
+                BehaviorScore(behavior: .lying, ratio: 0.18),
+                BehaviorScore(behavior: .sitting, ratio: 0.11),
+                BehaviorScore(behavior: .standing, ratio: 0.17),
+                BehaviorScore(behavior: .walking, ratio: 0.18),
+                BehaviorScore(behavior: .pacing, ratio: 0.29),
                 BehaviorScore(behavior: .barking, ratio: 0.07)
             ],
             signals: [
@@ -102,7 +101,7 @@ struct MockDogEmotionAnalyzer {
                 BehaviorSegment(startTime: 94, endTime: 121, behavior: .standing, emotion: .alert, confidence: 0.76),
                 BehaviorSegment(startTime: 122, endTime: 160, behavior: .pacing, emotion: .anxiousStressed, confidence: 0.79)
             ],
-            summaryText: "업로드된 영상에서는 중반 이후 반복 서성임과 경계 패턴이 증가해 불안/짜증 가능성이 높게 추정됩니다."
+            summaryText: "업로드된 영상에서는 중반 이후 반복 서성임과 경계 패턴이 증가해 불안/스트레스 가능성이 높게 추정됩니다."
         )
     }
 
@@ -124,7 +123,7 @@ struct MockDogEmotionAnalyzer {
     }
 
     private static func makeBehaviorScores(focus: BehaviorType) -> [BehaviorScore] {
-        let baseBehaviors: [BehaviorType] = [.lying, .sitting, .standing, .walking, .running, .pacing, .eating]
+        let baseBehaviors: [BehaviorType] = [.lying, .sitting, .standing, .walking, .running, .pacing]
         var scores: [BehaviorScore] = []
 
         for behavior in baseBehaviors {
