@@ -58,8 +58,8 @@ struct HomeView: View {
             SectionHeader(title: "분석 항목", icon: "waveform.path.ecg")
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                FeatureCard(icon: "figure.walk", title: "행동", detail: "걷기, 뛰기, 서성임")
-                FeatureCard(icon: "face.smiling", title: "상태", detail: "편안함, 흥분, 불안")
+                FeatureCard(icon: "figure.walk", title: "행동", detail: "걷기, 뛰기, 서성임, 식사")
+                FeatureCard(icon: "face.smiling", title: "상태", detail: "편안함, 흥분, 불안/짜증")
                 FeatureCard(icon: "speaker.wave.2.fill", title: "소리", detail: "짖음, 낑낑거림")
                 FeatureCard(icon: "clock.fill", title: "타임라인", detail: "시간대별 변화")
             }
