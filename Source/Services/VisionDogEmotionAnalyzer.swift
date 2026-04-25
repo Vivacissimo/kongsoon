@@ -1,18 +1,36 @@
 import AVFoundation
 import CoreGraphics
+import CoreML
 import Foundation
 import Vision
 
 struct VisionDogEmotionAnalyzer {
     struct FrameSample {
         let time: TimeInterval
-        let observation: VNRecognizedObjectObservation?
+        let dogObservation: VNRecognizedObjectObservation?
+        let modelPrediction: ModelPrediction?
     }
+
+    struct ModelPrediction {
+        let emotion: EmotionState?
+        let behavior: BehaviorType?
+        let confidence: Double
+        let rawLabel: String
+    }
+
+    private static let modelResourceNames = [
+        "DogBehaviorEmotionClassifier",
+        "DogEmotionBehaviorClassifier",
+        "DogEmotionClassifier"
+    ]
 
     static func analyzeVideo(
         at url: URL,
-        progressHandler: (@MainActor (Double) -> Void)? = nil
+        progressHandler: (@MainActor (Double) -> Void)? = nil,
+        allowHeuristicFallback: Bool = false
     ) async throws -> DogEmotionAnalysis {
+        let coreMLModel = try loadCoreMLModelIfAvailable(allowHeuristicFallback: allowHeuristicFallback)
+
         let asset = AVURLAsset(url: url)
         let durationSeconds = try await asset.load(.duration).seconds
         guard durationSeconds.isFinite, durationSeconds > 0 else {
@@ -34,8 +52,16 @@ struct VisionDogEmotionAnalyzer {
 
             let time = CMTime(seconds: second, preferredTimescale: 600)
             let image = try generator.copyCGImage(at: time, actualTime: nil)
-            let observation = try detectDog(in: image)
-            samples.append(FrameSample(time: second, observation: observation))
+            let dogObservation = try detectDog(in: image)
+            let modelPrediction = try predictFromModel(using: coreMLModel, image: image)
+
+            samples.append(
+                FrameSample(
+                    time: second,
+                    dogObservation: dogObservation,
+                    modelPrediction: modelPrediction
+                )
+            )
 
             let progress = Double(index + 1) / Double(max(frameTimes.count, 1))
             if let progressHandler {
@@ -46,9 +72,24 @@ struct VisionDogEmotionAnalyzer {
         return buildAnalysis(from: samples, duration: durationSeconds)
     }
 
+    private static func loadCoreMLModelIfAvailable(allowHeuristicFallback: Bool) throws -> VNCoreMLModel? {
+        for name in modelResourceNames {
+            if let modelURL = Bundle.main.url(forResource: name, withExtension: "mlmodelc") {
+                let model = try MLModel(contentsOf: modelURL)
+                return try VNCoreMLModel(for: model)
+            }
+        }
+
+        if allowHeuristicFallback {
+            return nil
+        }
+
+        throw AnalyzerError.modelNotFound(expectedNames: modelResourceNames)
+    }
+
     private static func buildFrameTimes(duration: TimeInterval) -> [TimeInterval] {
-        let maxSamples = 24
-        let interval = max(0.6, duration / Double(maxSamples))
+        let maxSamples = 30
+        let interval = max(0.5, duration / Double(maxSamples))
 
         var times: [TimeInterval] = []
         var current: TimeInterval = 0
@@ -81,57 +122,84 @@ struct VisionDogEmotionAnalyzer {
             .max(by: { $0.confidence < $1.confidence })
     }
 
+    private static func predictFromModel(using model: VNCoreMLModel?, image: CGImage) throws -> ModelPrediction? {
+        guard let model else { return nil }
+
+        var topResult: VNClassificationObservation?
+
+        let request = VNCoreMLRequest(model: model) { request, _ in
+            topResult = (request.results as? [VNClassificationObservation])?.first
+        }
+        request.imageCropAndScaleOption = .centerCrop
+
+        let handler = VNImageRequestHandler(cgImage: image)
+        try handler.perform([request])
+
+        guard let result = topResult else { return nil }
+
+        let parsed = ModelLabelParser.parse(result.identifier)
+        return ModelPrediction(
+            emotion: parsed.emotion,
+            behavior: parsed.behavior,
+            confidence: Double(result.confidence),
+            rawLabel: result.identifier
+        )
+    }
+
     private static func buildAnalysis(from samples: [FrameSample], duration: TimeInterval) -> DogEmotionAnalysis {
-        let detected = samples.compactMap(\.observation)
-        let detectionRate = Double(detected.count) / Double(max(samples.count, 1))
-        let averageConfidence = detected.isEmpty
-            ? 0.35
-            : detected.map { Double($0.confidence) }.reduce(0, +) / Double(detected.count)
+        let dogDetections = samples.compactMap(\.dogObservation)
+        let predictionSamples = samples.compactMap(\.modelPrediction)
+
+        let detectionRate = Double(dogDetections.count) / Double(max(samples.count, 1))
+        let modelCoverage = Double(predictionSamples.count) / Double(max(samples.count, 1))
+        let averageModelConfidence = predictionSamples.isEmpty
+            ? 0.0
+            : predictionSamples.map(\.confidence).reduce(0, +) / Double(predictionSamples.count)
 
         let movementScore = computeMovementScore(samples: samples)
         let jitterScore = computeJitterScore(samples: samples)
 
-        let emotion = inferEmotion(movement: movementScore, jitter: jitterScore, detectionRate: detectionRate)
-        let behavior = inferBehavior(movement: movementScore, jitter: jitterScore)
-        let confidence = max(0.45, min(0.95, (averageConfidence * 0.7) + (detectionRate * 0.3)))
+        let (emotionScores, dominantEmotion) = makeEmotionScores(
+            predictions: predictionSamples,
+            movement: movementScore,
+            jitter: jitterScore,
+            detectionRate: detectionRate
+        )
 
-        let emotionScores = makeEmotionScores(
-            dominant: emotion,
+        let (behaviorScores, dominantBehavior) = makeBehaviorScores(
+            predictions: predictionSamples,
             movement: movementScore,
             jitter: jitterScore
         )
-        let behaviorScores = makeBehaviorScores(
-            dominant: behavior,
-            movement: movementScore,
-            jitter: jitterScore
-        )
+
         let timeline = makeTimeline(samples: samples, duration: duration)
+        let confidence = max(0.40, min(0.98, averageModelConfidence * 0.7 + modelCoverage * 0.2 + detectionRate * 0.1))
 
         let signals: [AnalysisSignal] = [
             AnalysisSignal(
-                title: "반려견 인식률",
-                detail: "전체 샘플 중 반려견 인식 비율은 \(Int(detectionRate * 100))% 입니다.",
-                weight: detectionRate > 0.75 ? .high : (detectionRate > 0.45 ? .medium : .low)
+                title: "모델 적용률",
+                detail: "샘플 중 모델 추론이 수행된 비율은 \(Int(modelCoverage * 100))% 입니다.",
+                weight: modelCoverage > 0.7 ? .high : (modelCoverage > 0.35 ? .medium : .low)
             ),
             AnalysisSignal(
-                title: "움직임 강도",
-                detail: "프레임 간 중심 이동량/크기 변화를 합산한 점수는 \(Int(movementScore * 100))점입니다.",
-                weight: movementScore > 0.6 ? .high : (movementScore > 0.3 ? .medium : .low)
+                title: "강아지 인식률",
+                detail: "강아지 객체 인식 비율은 \(Int(detectionRate * 100))% 입니다.",
+                weight: detectionRate > 0.7 ? .high : (detectionRate > 0.4 ? .medium : .low)
             ),
             AnalysisSignal(
-                title: "패턴 변동성",
-                detail: "행동 패턴의 흔들림(jitter) 지수는 \(Int(jitterScore * 100))점입니다.",
-                weight: jitterScore > 0.55 ? .high : (jitterScore > 0.25 ? .medium : .low)
+                title: "모델 평균 신뢰도",
+                detail: "프레임 추론 평균 신뢰도는 \(Int(averageModelConfidence * 100))% 입니다.",
+                weight: averageModelConfidence > 0.75 ? .high : (averageModelConfidence > 0.45 ? .medium : .low)
             )
         ]
 
-        let summary = "영상 기반 비전 분석 결과, 현재 상태는 '\(emotion.title)' 가능성이 높으며 주 행동은 '\(behavior.title)'으로 추정됩니다."
+        let summary = "Core ML 모델 추론 결과, 현재 상태는 '\(dominantEmotion.title)' 가능성이 높고 주 행동은 '\(dominantBehavior.title)'으로 추정됩니다."
 
         return DogEmotionAnalysis(
             createdAt: Date(),
             mode: .uploadedVideo,
-            currentState: emotion,
-            currentBehavior: behavior,
+            currentState: dominantEmotion,
+            currentBehavior: dominantBehavior,
             confidence: confidence,
             emotionScores: emotionScores,
             behaviorScores: behaviorScores,
@@ -146,11 +214,12 @@ struct VisionDogEmotionAnalyzer {
         var count: Double = 0
 
         for pair in zip(samples, samples.dropFirst()) {
-            guard let a = pair.0.observation, let b = pair.1.observation else { continue }
+            guard let a = pair.0.dogObservation, let b = pair.1.dogObservation else { continue }
 
             let centerA = CGPoint(x: a.boundingBox.midX, y: a.boundingBox.midY)
             let centerB = CGPoint(x: b.boundingBox.midX, y: b.boundingBox.midY)
             let delta = hypot(centerA.x - centerB.x, centerA.y - centerB.y)
+
             let areaA = a.boundingBox.width * a.boundingBox.height
             let areaB = b.boundingBox.width * b.boundingBox.height
             let areaDelta = abs(areaA - areaB)
@@ -167,7 +236,7 @@ struct VisionDogEmotionAnalyzer {
     }
 
     private static func computeJitterScore(samples: [FrameSample]) -> Double {
-        let boxes = samples.compactMap { $0.observation?.boundingBox }
+        let boxes = samples.compactMap { $0.dogObservation?.boundingBox }
         guard boxes.count >= 3 else { return 0.2 }
 
         var turnCount = 0
@@ -184,92 +253,66 @@ struct VisionDogEmotionAnalyzer {
         return min(1.0, Double(turnCount) / Double(boxes.count - 2))
     }
 
-    private static func inferEmotion(movement: Double, jitter: Double, detectionRate: Double) -> EmotionState {
-        if detectionRate < 0.35 {
-            return .unknown
+    private static func makeEmotionScores(
+        predictions: [ModelPrediction],
+        movement: Double,
+        jitter: Double,
+        detectionRate: Double
+    ) -> ([EmotionScore], EmotionState) {
+        var bucket: [EmotionState: Double] = [:]
+
+        for state in EmotionState.allCases {
+            bucket[state] = 0.01
         }
 
-        if movement > 0.62 && jitter > 0.5 {
-            return .anxiousStressed
+        for prediction in predictions {
+            guard let emotion = prediction.emotion else { continue }
+            bucket[emotion, default: 0] += prediction.confidence
         }
 
-        if movement > 0.65 {
-            return .happyExcited
+        if predictions.isEmpty {
+            let inferred = inferEmotionHeuristic(movement: movement, jitter: jitter, detectionRate: detectionRate)
+            bucket[inferred, default: 0] += 1.0
         }
 
-        if movement > 0.38 {
-            return .alert
-        }
-
-        return .relaxed
+        let dominant = bucket.max(by: { $0.value < $1.value })?.key ?? .unknown
+        let raw = EmotionState.allCases.map { EmotionScore(state: $0, ratio: bucket[$0, default: 0]) }
+        return (normalize(raw), dominant)
     }
 
-    private static func inferBehavior(movement: Double, jitter: Double) -> BehaviorType {
-        if movement > 0.75 {
-            return .running
+    private static func makeBehaviorScores(
+        predictions: [ModelPrediction],
+        movement: Double,
+        jitter: Double
+    ) -> ([BehaviorScore], BehaviorType) {
+        let candidates: [BehaviorType] = [.lying, .sitting, .standing, .walking, .running, .pacing, .barking, .whining, .unknown]
+        var bucket: [BehaviorType: Double] = [:]
+
+        for behavior in candidates {
+            bucket[behavior] = 0.01
         }
 
-        if movement > 0.55 {
-            return .walking
+        for prediction in predictions {
+            guard let behavior = prediction.behavior else { continue }
+            bucket[behavior, default: 0] += prediction.confidence
         }
 
-        if jitter > 0.55 {
-            return .pacing
+        if predictions.isEmpty {
+            let inferred = inferBehaviorHeuristic(movement: movement, jitter: jitter)
+            bucket[inferred, default: 0] += 1.0
         }
 
-        if movement > 0.25 {
-            return .standing
-        }
-
-        return .lying
-    }
-
-    private static func makeEmotionScores(dominant: EmotionState, movement: Double, jitter: Double) -> [EmotionScore] {
-        let baseline: [EmotionState: Double] = [
-            .relaxed: 0.2,
-            .happyExcited: 0.18,
-            .anxiousStressed: 0.18,
-            .alert: 0.18,
-            .fearful: 0.1,
-            .unknown: 0.16
-        ]
-
-        return normalize(
-            EmotionState.allCases.map { state in
-                var value = baseline[state, default: 0.1]
-                if state == dominant { value += 0.45 }
-                if state == .anxiousStressed { value += jitter * 0.15 }
-                if state == .happyExcited { value += movement * 0.12 }
-                if state == .unknown { value += (1 - movement) * 0.05 }
-                return EmotionScore(state: state, ratio: value)
-            }
-        )
-    }
-
-    private static func makeBehaviorScores(dominant: BehaviorType, movement: Double, jitter: Double) -> [BehaviorScore] {
-        let candidates: [BehaviorType] = [.lying, .sitting, .standing, .walking, .running, .pacing]
-
-        return normalize(
-            candidates.map { behavior in
-                var value = 0.14
-                if behavior == dominant { value += 0.45 }
-                if behavior == .running { value += movement * 0.15 }
-                if behavior == .walking { value += movement * 0.08 }
-                if behavior == .pacing { value += jitter * 0.18 }
-                if behavior == .lying { value += (1 - movement) * 0.12 }
-                return BehaviorScore(behavior: behavior, ratio: value)
-            }
-        )
+        let dominant = bucket.max(by: { $0.value < $1.value })?.key ?? .unknown
+        let raw = candidates.map { BehaviorScore(behavior: $0, ratio: bucket[$0, default: 0]) }
+        return (normalize(raw), dominant)
     }
 
     private static func makeTimeline(samples: [FrameSample], duration: TimeInterval) -> [BehaviorSegment] {
         guard !samples.isEmpty else {
-            return [
-                BehaviorSegment(startTime: 0, endTime: duration, behavior: .unknown, emotion: .unknown, confidence: 0.3)
-            ]
+            return [BehaviorSegment(startTime: 0, endTime: duration, behavior: .unknown, emotion: .unknown, confidence: 0.3)]
         }
 
-        let chunkCount = min(5, max(2, samples.count / 4))
+        let chunkCount = min(6, max(2, samples.count / 5))
         let chunkLength = max(1, Int(ceil(Double(samples.count) / Double(chunkCount))))
         var segments: [BehaviorSegment] = []
 
@@ -277,31 +320,55 @@ struct VisionDogEmotionAnalyzer {
         while startIndex < samples.count {
             let endIndex = min(samples.count, startIndex + chunkLength)
             let chunk = Array(samples[startIndex..<endIndex])
+
             let movement = computeMovementScore(samples: chunk)
             let jitter = computeJitterScore(samples: chunk)
-            let detectionRate = Double(chunk.compactMap(\.observation).count) / Double(max(chunk.count, 1))
+            let detectionRate = Double(chunk.compactMap(\.dogObservation).count) / Double(max(chunk.count, 1))
+            let predictions = chunk.compactMap(\.modelPrediction)
 
-            let emotion = inferEmotion(movement: movement, jitter: jitter, detectionRate: detectionRate)
-            let behavior = inferBehavior(movement: movement, jitter: jitter)
+            let (emotionScores, emotion) = makeEmotionScores(
+                predictions: predictions,
+                movement: movement,
+                jitter: jitter,
+                detectionRate: detectionRate
+            )
+            let (_, behavior) = makeBehaviorScores(
+                predictions: predictions,
+                movement: movement,
+                jitter: jitter
+            )
 
-            let startTime = chunk.first?.time ?? 0
-            let endTime = chunk.last?.time ?? duration
-            let confidence = max(0.4, min(0.92, detectionRate * 0.7 + movement * 0.2 + 0.1))
+            let confidence = max(0.35, min(0.95, emotionScores.first(where: { $0.state == emotion })?.ratio ?? 0.5))
 
             segments.append(
                 BehaviorSegment(
-                    startTime: startTime,
-                    endTime: endTime,
+                    startTime: chunk.first?.time ?? 0,
+                    endTime: chunk.last?.time ?? duration,
                     behavior: behavior,
                     emotion: emotion,
                     confidence: confidence
                 )
             )
-
             startIndex = endIndex
         }
 
         return segments
+    }
+
+    private static func inferEmotionHeuristic(movement: Double, jitter: Double, detectionRate: Double) -> EmotionState {
+        if detectionRate < 0.3 { return .unknown }
+        if movement > 0.62 && jitter > 0.5 { return .anxiousStressed }
+        if movement > 0.65 { return .happyExcited }
+        if movement > 0.38 { return .alert }
+        return .relaxed
+    }
+
+    private static func inferBehaviorHeuristic(movement: Double, jitter: Double) -> BehaviorType {
+        if movement > 0.75 { return .running }
+        if movement > 0.55 { return .walking }
+        if jitter > 0.55 { return .pacing }
+        if movement > 0.25 { return .standing }
+        return .lying
     }
 
     private static func normalize(_ raw: [EmotionScore]) -> [EmotionScore] {
@@ -317,13 +384,58 @@ struct VisionDogEmotionAnalyzer {
     }
 }
 
+private enum ModelLabelParser {
+    static func parse(_ raw: String) -> (emotion: EmotionState?, behavior: BehaviorType?) {
+        let text = raw.lowercased()
+
+        let emotion = emotionMap.first { text.contains($0.key) }?.value
+        let behavior = behaviorMap.first { text.contains($0.key) }?.value
+
+        return (emotion, behavior)
+    }
+
+    private static let emotionMap: [(String, EmotionState)] = [
+        ("relaxed", .relaxed),
+        ("calm", .relaxed),
+        ("happy", .happyExcited),
+        ("excited", .happyExcited),
+        ("anxious", .anxiousStressed),
+        ("stress", .anxiousStressed),
+        ("alert", .alert),
+        ("focus", .alert),
+        ("fear", .fearful),
+        ("unknown", .unknown)
+    ]
+
+    private static let behaviorMap: [(String, BehaviorType)] = [
+        ("lying", .lying),
+        ("lie", .lying),
+        ("sitting", .sitting),
+        ("sit", .sitting),
+        ("standing", .standing),
+        ("stand", .standing),
+        ("walking", .walking),
+        ("walk", .walking),
+        ("running", .running),
+        ("run", .running),
+        ("pacing", .pacing),
+        ("bark", .barking),
+        ("whin", .whining),
+        ("unknown", .unknown)
+    ]
+}
+
 enum AnalyzerError: LocalizedError {
     case invalidAssetDuration
+    case modelNotFound(expectedNames: [String])
 
     var errorDescription: String? {
         switch self {
         case .invalidAssetDuration:
             return "분석 가능한 영상 길이를 확인할 수 없습니다."
+        case .modelNotFound(let expectedNames):
+            let names = expectedNames.map { "\($0).mlmodelc" }.joined(separator: ", ")
+            return "Core ML 모델 파일을 찾지 못했습니다. 앱 번들에 다음 파일 중 하나를 포함하세요: \(names)"
         }
     }
 }

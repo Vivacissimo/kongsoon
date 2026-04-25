@@ -247,7 +247,7 @@ struct RealtimeAnalysisView: View {
 
         if cameraManager.lastRecordedVideoURL != nil {
             return isAnalyzingRecordedVideo
-                ? "Vision 기반 영상 분석을 수행하는 중입니다."
+                ? "Core ML 모델 기반 영상 분석을 수행하는 중입니다."
                 : "녹화가 끝났습니다. 분석 리포트를 확인하세요."
         }
 
