@@ -1,157 +1,37 @@
-# Kongsoon
+# kongsoon UI MVP
 
-Kongsoon은 iOS 환경에서 강아지의 행동과 감정 상태를 분석하는 것을 목표로 하는 SwiftUI 기반 애플리케이션입니다.
+SwiftUI 기반 강아지 감정/행동 분석 앱 UI MVP입니다.
 
-현재 버전은 실제 AI 모델이 연결되기 전 단계의 UI MVP입니다.  
-실시간 카메라 화면, 기존 영상 선택, 분석 결과 리포트 화면, 감정/행동 비율 표시, 판단 근거 표시 등의 기본 앱 흐름을 구현했습니다.
+## 포함 기능
 
----
-
-## Project Goal
-
-Kongsoon의 최종 목표는 다음과 같습니다.
-
-- iPhone 카메라를 통한 강아지 실시간 분석
-- 기존에 촬영한 강아지 영상 업로드 분석
-- 강아지 행동 분석
-- 강아지 감정/상태 추정
-- 분석 결과 리포트 제공
-- 추후 Core ML 기반 온디바이스 AI 추론 적용
-
----
-
-## Current Status
-
-현재 구현된 기능은 다음과 같습니다.
-
-- SwiftUI 기반 홈 화면
-- 실시간 분석 화면
-- 카메라 프리뷰 연결
-- 기존 영상 선택 화면
-- 분석 결과 리포트 화면
-- Mock 분석 엔진
+- 홈 화면
+- 실시간 카메라 분석 화면
+- 기존 영상 선택/분석 화면
 - 감정 상태 카드
-- 행동/감정 비율 UI
-- 판단 근거 리스트
-- 타임라인 UI
+- 행동/감정 비율 리포트
+- 감정 판단 근거 리스트
+- 시간대별 타임라인 UI
+- 카메라 프리뷰 연결
+- PhotosPicker 영상 선택 연결
+- Mock 분석 엔진
 
-현재 분석 결과는 실제 AI 추론 결과가 아니라 `MockDogEmotionAnalyzer`에서 생성하는 테스트용 데이터입니다.
+## Xcode 적용 방법
 
----
+1. Xcode에서 `iOS App` 템플릿으로 새 프로젝트를 만듭니다.
+2. Interface는 `SwiftUI`, Language는 `Swift`로 선택합니다.
+3. 이 폴더 안의 `kongsoon` 하위 Swift 파일들을 프로젝트에 추가합니다.
+4. 기존 `ContentView.swift`, `AppNameApp.swift`와 이름이 겹치면 삭제하거나 아래 파일명에 맞춰 교체합니다.
+5. `Info.plist`에 아래 권한 문구를 추가합니다.
 
-## Main Features
+```xml
+<key>NSCameraUsageDescription</key>
+<string>강아지의 행동과 감정 상태를 실시간으로 분석하기 위해 카메라 접근이 필요합니다.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>강아지의 짖음, 낑낑거림 등 소리를 분석하기 위해 마이크 접근이 필요합니다.</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>기존에 촬영한 강아지 영상을 선택해 분석하기 위해 사진 보관함 접근이 필요합니다.</string>
+```
 
-### 1. Realtime Analysis
+## 현재 상태
 
-실시간 분석 화면에서는 iPhone 카메라를 통해 강아지를 촬영하는 상황을 가정합니다.
-
-현재는 카메라 프리뷰와 Mock 분석 결과를 표시합니다.
-
-추후 목표:
-
-- 카메라 프레임 추출
-- Core ML 모델 추론
-- 강아지 탐지
-- 행동 분류
-- 감정/상태 추정
-- 실시간 결과 오버레이 표시
-
----
-
-### 2. Video Analysis
-
-사용자가 기존에 촬영한 영상을 선택하면 분석 결과 화면으로 이동합니다.
-
-현재는 영상 선택 후 Mock 분석 결과를 표시합니다.
-
-추후 목표:
-
-- 영상 프레임 샘플링
-- 프레임별 AI 추론
-- 시간대별 행동 분석
-- 감정 상태 타임라인 생성
-- 분석 리포트 저장
-
----
-
-### 3. Emotion State Report
-
-분석 결과 화면에서는 다음 정보를 표시합니다.
-
-- 현재 추정 감정 상태
-- 신뢰도
-- 행동 비율
-- 감정 비율
-- 감지된 판단 근거
-- 시간대별 분석 타임라인
-
-예상 감정 상태:
-
-- Relaxed
-- Happy / Excited
-- Anxious / Stressed
-- Alert
-- Fearful
-- Unknown
-
----
-
-## Tech Stack
-
-### iOS
-
-- Swift
-- SwiftUI
-- AVFoundation
-- PhotosUI
-- Combine
-
-### Future Plan
-
-- Core ML
-- Vision
-- FastAPI
-- PostgreSQL
-- Redis
-- Docker
-- Kubernetes
-- GitHub Actions
-- Prometheus
-- Grafana
-
----
-
-## Project Structure
-
-```text
-Kongsoon/
-├── Camera/
-│   ├── CameraManager.swift
-│   └── CameraPreview.swift
-│
-├── Components/
-│   ├── EmotionHeaderCard.swift
-│   ├── PrimaryActionButton.swift
-│   ├── ScoreBarList.swift
-│   ├── SignalListView.swift
-│   └── TimelineListView.swift
-│
-├── Models/
-│   ├── AnalysisModels.swift
-│   ├── BehaviorType.swift
-│   └── EmotionState.swift
-│
-├── Services/
-│   └── MockDogEmotionAnalyzer.swift
-│
-├── Transferables/
-│   └── Movie.swift
-│
-├── Views/
-│   ├── HomeView.swift
-│   ├── RealtimeAnalysisView.swift
-│   ├── VideoAnalysisView.swift
-│   └── AnalysisReportView.swift
-│
-├── ContentView.swift
-└── kongsoonApp.swift
+AI 추론은 아직 Mock 결과입니다. 나중에 `MockDogEmotionAnalyzer`를 실제 Core ML 기반 `DogEmotionAnalyzer`로 교체하면 됩니다.

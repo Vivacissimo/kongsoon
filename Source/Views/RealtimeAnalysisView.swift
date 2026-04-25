@@ -5,9 +5,12 @@ import Combine
 struct RealtimeAnalysisView: View {
     @StateObject private var cameraManager = CameraManager()
     @State private var analysis = MockDogEmotionAnalyzer.makeRealtimeResult()
-    @State private var isAnalyzing = true
+    @State private var isAnalysisSessionActive = false
+    @State private var sessionStartDate: Date?
+    @State private var elapsedSeconds = 0
+    @State private var showRecordedReport = false
 
-    private let timer = Timer.publish(every: 2.0, on: .main, in: .common).autoconnect()
+    private let timer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -21,7 +24,7 @@ struct RealtimeAnalysisView: View {
             .padding(16)
         }
         .background(.black)
-        .navigationTitle("실시간 분석")
+        .navigationTitle("녹화 분석")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -30,11 +33,16 @@ struct RealtimeAnalysisView: View {
             cameraManager.requestPermissionAndConfigure()
         }
         .onDisappear {
+            cameraManager.stopRecording()
             cameraManager.stop()
         }
         .onReceive(timer) { _ in
-            guard isAnalyzing else { return }
+            guard isAnalysisSessionActive else { return }
+            updateElapsedTime()
             analysis = MockDogEmotionAnalyzer.makeRealtimeResult()
+        }
+        .navigationDestination(isPresented: $showRecordedReport) {
+            AnalysisReportView(analysis: analysis)
         }
     }
 
@@ -46,12 +54,13 @@ struct RealtimeAnalysisView: View {
                 .overlay(alignment: .center) {
                     DogDetectionFrameView(state: analysis.currentState)
                         .padding(34)
+                        .opacity(isAnalysisSessionActive ? 1.0 : 0.45)
                 }
         case .notDetermined:
             PermissionMessageView(
                 icon: "camera.fill",
                 title: "카메라 권한 확인 중",
-                detail: "실시간 분석을 위해 카메라 권한을 요청합니다."
+                detail: "녹화 분석을 위해 카메라 권한을 요청합니다."
             )
         case .denied, .restricted:
             PermissionMessageView(
@@ -71,28 +80,39 @@ struct RealtimeAnalysisView: View {
     private var topStatusBar: some View {
         HStack(spacing: 10) {
             Circle()
-                .fill(isAnalyzing ? .green : .gray)
+                .fill(statusColor)
                 .frame(width: 10, height: 10)
 
-            Text(isAnalyzing ? "분석 중" : "일시정지")
-                .font(.subheadline.weight(.bold))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(statusTitle)
+                    .font(.subheadline.weight(.bold))
+
+                Text(statusSubtitle)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.75))
+            }
 
             Spacer()
 
             Button {
-                isAnalyzing.toggle()
+                toggleRecordingSession()
             } label: {
-                Image(systemName: isAnalyzing ? "pause.fill" : "play.fill")
-                    .font(.headline)
-                    .frame(width: 38, height: 38)
-                    .background(.thinMaterial)
-                    .clipShape(Circle())
+                HStack(spacing: 8) {
+                    Image(systemName: isAnalysisSessionActive ? "stop.fill" : "record.circle")
+                    Text(isAnalysisSessionActive ? "정지" : "시작")
+                }
+                .font(.headline)
+                .padding(.horizontal, 14)
+                .frame(height: 42)
+                .background(isAnalysisSessionActive ? Color.red.opacity(0.95) : Color.white.opacity(0.92))
+                .foregroundStyle(isAnalysisSessionActive ? .white : .red)
+                .clipShape(Capsule())
             }
             .buttonStyle(.plain)
         }
         .foregroundStyle(.white)
         .padding(12)
-        .background(.black.opacity(0.35))
+        .background(.black.opacity(0.38))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
@@ -100,7 +120,7 @@ struct RealtimeAnalysisView: View {
         VStack(spacing: 14) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("현재 추정 상태")
+                    Text(isAnalysisSessionActive ? "녹화 중 추정 상태" : "분석 대기")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
 
@@ -108,22 +128,22 @@ struct RealtimeAnalysisView: View {
                         Image(systemName: analysis.currentState.iconName)
                             .foregroundStyle(analysis.currentState.color)
 
-                        Text(analysis.currentState.title)
+                        Text(isAnalysisSessionActive ? analysis.currentState.title : "시작 버튼을 눌러 녹화")
                             .font(.title2.weight(.bold))
                     }
 
-                    Text(analysis.summaryText)
+                    Text(resultDescription)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        .lineLimit(3)
                 }
 
                 Spacer()
 
                 VStack(spacing: 4) {
-                    Text("\(Int(analysis.confidence * 100))%")
+                    Text(isAnalysisSessionActive ? "\(Int(analysis.confidence * 100))%" : formatElapsedTime(elapsedSeconds))
                         .font(.title3.weight(.bold))
-                    Text("신뢰도")
+                    Text(isAnalysisSessionActive ? "신뢰도" : "녹화 길이")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -135,22 +155,104 @@ struct RealtimeAnalysisView: View {
             Divider()
 
             SignalListView(signals: Array(analysis.signals.prefix(2)))
+                .opacity(isAnalysisSessionActive ? 1.0 : 0.6)
 
-            NavigationLink {
-                AnalysisReportView(analysis: analysis)
-            } label: {
-                Text("상세 리포트 보기")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(14)
-                    .background(analysis.currentState.color.opacity(0.14))
-                    .foregroundStyle(analysis.currentState.color)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            if cameraManager.lastRecordedVideoURL != nil && !isAnalysisSessionActive {
+                Button {
+                    showRecordedReport = true
+                } label: {
+                    Text("녹화 영상 리포트 보기")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(14)
+                        .background(analysis.currentState.color.opacity(0.14))
+                        .foregroundStyle(analysis.currentState.color)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .buttonStyle(.plain)
+            } else {
+                Text("특정 행동을 분석하려면 시작을 누르고 행동 구간을 녹화한 뒤 정지하세요.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(16)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+    }
+
+    private var statusColor: Color {
+        if isAnalysisSessionActive {
+            return .red
+        }
+
+        if cameraManager.lastRecordedVideoURL != nil {
+            return .green
+        }
+
+        return .gray
+    }
+
+    private var statusTitle: String {
+        if isAnalysisSessionActive {
+            return "녹화 및 분석 중"
+        }
+
+        if cameraManager.lastRecordedVideoURL != nil {
+            return "녹화 완료"
+        }
+
+        return "대기 중"
+    }
+
+    private var statusSubtitle: String {
+        if isAnalysisSessionActive {
+            return "경과 시간 \(formatElapsedTime(elapsedSeconds))"
+        }
+
+        if cameraManager.lastRecordedVideoURL != nil {
+            return "저장된 영상으로 리포트를 확인할 수 있습니다."
+        }
+
+        return "특정 행동이 시작될 때 녹화를 시작하세요."
+    }
+
+    private var resultDescription: String {
+        if isAnalysisSessionActive {
+            return analysis.summaryText
+        }
+
+        if cameraManager.lastRecordedVideoURL != nil {
+            return "녹화가 끝났습니다. 현재 버전에서는 Mock 분석 결과를 리포트로 표시합니다."
+        }
+
+        return "실시간으로 계속 분석하기보다, 분석하고 싶은 행동 구간만 녹화해서 리포트로 보는 흐름입니다."
+    }
+
+    private func toggleRecordingSession() {
+        if isAnalysisSessionActive {
+            isAnalysisSessionActive = false
+            cameraManager.stopRecording()
+            analysis = MockDogEmotionAnalyzer.makeUploadedVideoResult()
+        } else {
+            elapsedSeconds = 0
+            sessionStartDate = Date()
+            cameraManager.startRecording()
+            isAnalysisSessionActive = true
+            analysis = MockDogEmotionAnalyzer.makeRealtimeResult()
+        }
+    }
+
+    private func updateElapsedTime() {
+        guard let sessionStartDate else { return }
+        elapsedSeconds = max(0, Int(Date().timeIntervalSince(sessionStartDate)))
+    }
+
+    private func formatElapsedTime(_ totalSeconds: Int) -> String {
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        return String(format: "%02d:%02d", minutes, seconds)
     }
 }
 
