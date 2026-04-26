@@ -34,5 +34,5 @@ SwiftUI 기반 강아지 감정/행동 분석 앱 UI MVP입니다.
 
 ## 현재 상태
 
-`VisionDogEmotionAnalyzer`는 앱 번들에 포함된 Core ML 모델(`DogBehaviorEmotionClassifier.mlmodelc` 등)을 우선 사용해 프레임 단위 추론을 수행하고, Vision 객체 인식 결과와 함께 리포트를 생성합니다.
-실시간 스트리밍 중 화면 표시는 Mock 상태를 사용하지만, 녹화 종료 후에는 Core ML 기반 실제 영상 분석 결과로 리포트를 생성합니다.
+`VisionDogEmotionAnalyzer`는 앱 번들에 포함된 Core ML 모델(`DogBehaviorEmotionClassifier.mlmodelc` 등)을 우선 사용해 프레임 단위 추론을 수행하고, 모델이 없으면 Vision 객체 인식과 움직임 패턴 기반 추정으로 리포트를 생성합니다.
+실시간 스트리밍 중 화면 표시는 Mock 상태를 사용하지만, 녹화 종료 후에는 영상 프레임 분석 결과로 리포트를 생성합니다.

@@ -26,8 +26,8 @@ struct VisionDogEmotionAnalyzer {
 
     static func analyzeVideo(
         at url: URL,
-        progressHandler: (@MainActor (Double) -> Void)? = nil,
-        allowHeuristicFallback: Bool = false
+        progressHandler: ((Double) -> Void)? = nil,
+        allowHeuristicFallback: Bool = true
     ) async throws -> DogEmotionAnalysis {
         let coreMLModel = try loadCoreMLModelIfAvailable(allowHeuristicFallback: allowHeuristicFallback)
 
@@ -51,7 +51,7 @@ struct VisionDogEmotionAnalyzer {
             try Task.checkCancellation()
 
             let time = CMTime(seconds: second, preferredTimescale: 600)
-            let image = try generator.copyCGImage(at: time, actualTime: nil)
+            let image = try await generateImage(generator: generator, at: time)
             let dogObservation = try detectDog(in: image)
             let modelPrediction = try predictFromModel(using: coreMLModel, image: image)
 
@@ -65,7 +65,9 @@ struct VisionDogEmotionAnalyzer {
 
             let progress = Double(index + 1) / Double(max(frameTimes.count, 1))
             if let progressHandler {
-                await progressHandler(progress)
+                await MainActor.run {
+                    progressHandler(progress)
+                }
             }
         }
 
@@ -104,6 +106,34 @@ struct VisionDogEmotionAnalyzer {
         }
 
         return times
+    }
+
+    private static func generateImage(generator: AVAssetImageGenerator, at time: CMTime) async throws -> CGImage {
+        try await withCheckedThrowingContinuation { continuation in
+            var resumed = false
+            let requestedTime = NSValue(time: time)
+
+            generator.generateCGImagesAsynchronously(forTimes: [requestedTime]) { _, image, _, result, error in
+                guard !resumed else { return }
+
+                switch result {
+                case .succeeded:
+                    if let image {
+                        resumed = true
+                        continuation.resume(returning: image)
+                    } else {
+                        resumed = true
+                        continuation.resume(throwing: error ?? AnalyzerError.failedToGenerateFrame)
+                    }
+                case .failed, .cancelled:
+                    resumed = true
+                    continuation.resume(throwing: error ?? AnalyzerError.failedToGenerateFrame)
+                @unknown default:
+                    resumed = true
+                    continuation.resume(throwing: AnalyzerError.failedToGenerateFrame)
+                }
+            }
+        }
     }
 
     private static func detectDog(in image: CGImage) throws -> VNRecognizedObjectObservation? {
@@ -175,12 +205,20 @@ struct VisionDogEmotionAnalyzer {
         let timeline = makeTimeline(samples: samples, duration: duration)
         let confidence = max(0.40, min(0.98, averageModelConfidence * 0.7 + modelCoverage * 0.2 + detectionRate * 0.1))
 
-        let signals: [AnalysisSignal] = [
-            AnalysisSignal(
+        let modelSignal = modelCoverage > 0
+            ? AnalysisSignal(
                 title: "모델 적용률",
                 detail: "샘플 중 모델 추론이 수행된 비율은 \(Int(modelCoverage * 100))% 입니다.",
                 weight: modelCoverage > 0.7 ? .high : (modelCoverage > 0.35 ? .medium : .low)
-            ),
+            )
+            : AnalysisSignal(
+                title: "분석 방식",
+                detail: "Core ML 모델 파일이 없어 Vision 인식과 움직임 패턴 기반으로 추정했습니다.",
+                weight: .medium
+            )
+
+        let signals: [AnalysisSignal] = [
+            modelSignal,
             AnalysisSignal(
                 title: "강아지 인식률",
                 detail: "강아지 객체 인식 비율은 \(Int(detectionRate * 100))% 입니다.",
@@ -193,7 +231,9 @@ struct VisionDogEmotionAnalyzer {
             )
         ]
 
-        let summary = "Core ML 모델 추론 결과, 현재 상태는 '\(dominantEmotion.title)' 가능성이 높고 주 행동은 '\(dominantBehavior.title)'으로 추정됩니다."
+        let summary = modelCoverage > 0
+            ? "Core ML 모델 추론 결과, 현재 상태는 '\(dominantEmotion.title)' 가능성이 높고 주 행동은 '\(dominantBehavior.title)'으로 추정됩니다."
+            : "Vision 인식과 움직임 패턴을 바탕으로, 현재 상태는 '\(dominantEmotion.title)' 가능성이 높고 주 행동은 '\(dominantBehavior.title)'으로 추정됩니다."
 
         return DogEmotionAnalysis(
             createdAt: Date(),
@@ -388,8 +428,8 @@ private enum ModelLabelParser {
     static func parse(_ raw: String) -> (emotion: EmotionState?, behavior: BehaviorType?) {
         let text = raw.lowercased()
 
-        let emotion = emotionMap.first { text.contains($0.key) }?.value
-        let behavior = behaviorMap.first { text.contains($0.key) }?.value
+        let emotion = emotionMap.first { text.contains($0.0) }?.1
+        let behavior = behaviorMap.first { text.contains($0.0) }?.1
 
         return (emotion, behavior)
     }
@@ -430,12 +470,15 @@ private enum ModelLabelParser {
 
 enum AnalyzerError: LocalizedError {
     case invalidAssetDuration
+    case failedToGenerateFrame
     case modelNotFound(expectedNames: [String])
 
     var errorDescription: String? {
         switch self {
         case .invalidAssetDuration:
             return "분석 가능한 영상 길이를 확인할 수 없습니다."
+        case .failedToGenerateFrame:
+            return "영상 프레임을 생성하는 중 오류가 발생했습니다."
         case .modelNotFound(let expectedNames):
             let names = expectedNames.map { "\($0).mlmodelc" }.joined(separator: ", ")
             return "Core ML 모델 파일을 찾지 못했습니다. 앱 번들에 다음 파일 중 하나를 포함하세요: \(names)"
