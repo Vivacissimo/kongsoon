@@ -14,6 +14,12 @@ xcuserdata/
 Packages/
 Package.resolved
 
+# Python / local AI server
+__pycache__/
+*.pyc
+AI_Server/.venv/
+AI_Server/uploads/
+
 # CocoaPods
 Pods/
 

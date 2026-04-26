@@ -164,8 +164,15 @@ struct VideoAnalysisView: View {
                 throw AnalyzerError.invalidAssetDuration
             }
 
-            analysis = try await VisionDogEmotionAnalyzer.analyzeVideo(at: selectedMovie.url) { currentProgress in
-                progress = currentProgress
+            do {
+                progress = 0.15
+                analysis = try await RemoteDogEmotionAnalyzer.analyzeVideo(at: selectedMovie.url)
+                progress = 1.0
+            } catch {
+                errorMessage = "데스크탑 AI 서버 연결에 실패해 기기 내 분석으로 대체했습니다: \(error.localizedDescription)"
+                analysis = try await VisionDogEmotionAnalyzer.analyzeVideo(at: selectedMovie.url) { currentProgress in
+                    progress = currentProgress
+                }
             }
         } catch {
             errorMessage = "영상 로드 또는 분석 준비 중 오류가 발생했습니다: \(error.localizedDescription)"
