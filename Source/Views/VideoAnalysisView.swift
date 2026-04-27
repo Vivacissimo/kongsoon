@@ -160,12 +160,13 @@ struct VideoAnalysisView: View {
         do {
             selectedMovie = try await item.loadTransferable(type: Movie.self)
 
-            for step in 1...10 {
-                try await Task.sleep(nanoseconds: 150_000_000)
-                progress = Double(step) / 10.0
+            guard let selectedMovie else {
+                throw AnalyzerError.invalidAssetDuration
             }
 
-            analysis = MockDogEmotionAnalyzer.makeUploadedVideoResult()
+            analysis = try await VisionDogEmotionAnalyzer.analyzeVideo(at: selectedMovie.url) { currentProgress in
+                progress = currentProgress
+            }
         } catch {
             errorMessage = "영상 로드 또는 분석 준비 중 오류가 발생했습니다: \(error.localizedDescription)"
         }
